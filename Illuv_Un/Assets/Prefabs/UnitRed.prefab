@@ -25,7 +25,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3103328174104913018, guid: a532c9a94048cb2498cf2bb52cfc85e7, type: 3}
       propertyPath: timeStepsPerAttack
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 3103328174104913018, guid: a532c9a94048cb2498cf2bb52cfc85e7, type: 3}
       propertyPath: attackRangeInHexTiles

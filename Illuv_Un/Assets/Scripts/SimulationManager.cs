@@ -60,6 +60,13 @@ public class SimulationManager : MonoBehaviour
         return instance.unitsAndTheirActualLocations[colorCode];
     }
 
+    public static UnitController GetOpponent(ColorCode colorCode)
+    {
+        if (instance == null) { return null; }
+
+        return colorCode == ColorCode.Red ? instance.redUnitController : instance.blueUnitController;
+    }
+
     public static void UpdatePosition(ColorCode colorCode, Vector3 position)
     {
         if (instance == null) { return; }

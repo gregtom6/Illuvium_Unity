@@ -174,10 +174,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ad622c80374144448003d81b389a783, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  colorCode: 0
+  renderer: {fileID: 3070816126281831306}
+  checker: {fileID: 188818256745423844}
   hexesPerTimeStep: 0
   attackRangeInHexTiles: 0
   hitPointMinBorder: 0
   hitPointMaxBorder: 0
   timeStepsPerAttack: 0
-  colorCode: 0
-  checker: {fileID: 188818256745423844}

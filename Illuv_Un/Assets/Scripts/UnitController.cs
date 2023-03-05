@@ -6,19 +6,35 @@ using static UnityEngine.GraphicsBuffer;
 
 public class UnitController : MonoBehaviour
 {
+    [SerializeField] ColorCode colorCode;
+    [SerializeField] MeshRenderer renderer;
+    [SerializeField] Transform checker;
     [SerializeField] float hexesPerTimeStep;
     [SerializeField] float attackRangeInHexTiles;
     [SerializeField] int hitPointMinBorder;
     [SerializeField] int hitPointMaxBorder;
     [SerializeField] int timeStepsPerAttack;
-    [SerializeField] ColorCode colorCode;
-    [SerializeField] Transform checker;
+
+    int maxLifePoint;
+    int currentLifePoint;
 
     bool isInitialized = false;
 
     Vector3 actualPosition;
 
     State state = State.None;
+
+    int timeStepCount;
+
+    private void Start()
+    {
+        maxLifePoint = Random.Range(hitPointMinBorder, hitPointMaxBorder);
+
+        if (maxLifePoint == 0)
+            maxLifePoint = 1;
+
+        currentLifePoint = maxLifePoint;
+    }
 
     public void Initialize()
     {
@@ -42,8 +58,21 @@ public class UnitController : MonoBehaviour
         else
         {
             state = State.Attack;
+            timeStepCount = 0;
         }
 
+    }
+
+    public void DamageMe()
+    {
+        if (state == State.Death) { return; }
+
+        currentLifePoint -= 1;
+
+        if (currentLifePoint <= 0)
+        {
+            state = State.Death;
+        }
     }
 
     void Step()
@@ -163,18 +192,47 @@ public class UnitController : MonoBehaviour
         }
         else if (state == State.Attack)
         {
+            timeStepCount += 1;
 
+            if (timeStepCount == timeStepsPerAttack)
+            {
+                UnitController opponentUnit = SimulationManager.GetOpponent(colorCode == ColorCode.Blue ? ColorCode.Red : ColorCode.Blue);
+
+                opponentUnit.DamageMe();
+
+                timeStepCount = 0;
+            }
         }
     }
 
     private void Update()
     {
-        Visualize();
+        VisualizePosition();
+
+        VisualizeDamage();
     }
 
-    void Visualize()
+    void VisualizePosition()
     {
         transform.position = actualPosition;
+    }
+
+    void VisualizeDamage()
+    {
+        // Get the current material color
+        Color currentColor = renderer.material.color;
+
+        // Convert the color to HSV
+        Color.RGBToHSV(currentColor, out float h, out float s, out float v);
+
+        // Modify the S value
+        s = (float)currentLifePoint / (float)maxLifePoint;
+
+        // Convert the modified HSV color back to RGB
+        Color newColor = Color.HSVToRGB(h, s, v);
+
+        // Set the material color to the new color
+        renderer.material.color = newColor;
     }
 }
 
@@ -190,4 +248,5 @@ public enum State
     None,
     Movement,
     Attack,
+    Death,
 }
