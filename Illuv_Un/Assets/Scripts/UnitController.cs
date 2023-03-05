@@ -9,6 +9,8 @@ public class UnitController : MonoBehaviour
     [SerializeField] ColorCode colorCode;
     [SerializeField] MeshRenderer renderer;
     [SerializeField] Transform checker;
+    [SerializeField] GameObject attackParentGameObject;
+    [SerializeField] GameObject dieParentGameObject;
     [SerializeField] float hexesPerTimeStep;
     [SerializeField] float attackRangeInHexTiles;
     [SerializeField] int hitPointMinBorder;
@@ -210,6 +212,8 @@ public class UnitController : MonoBehaviour
         VisualizePosition();
 
         VisualizeDamage();
+
+        VisualizeState();
     }
 
     void VisualizePosition()
@@ -233,6 +237,12 @@ public class UnitController : MonoBehaviour
 
         // Set the material color to the new color
         renderer.material.color = newColor;
+    }
+
+    void VisualizeState()
+    {
+        attackParentGameObject.SetActive(state==State.Attack);
+        dieParentGameObject.SetActive(state == State.Death);
     }
 }
 
