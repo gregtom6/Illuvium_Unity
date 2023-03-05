@@ -12,6 +12,7 @@ public class UnitController : MonoBehaviour
     [SerializeField] int hitPointMaxBorder;
     [SerializeField] int timeStepsPerAttack;
     [SerializeField] ColorCode colorCode;
+    [SerializeField] Transform checker;
 
     bool isInitialized = false;
 
@@ -32,8 +33,9 @@ public class UnitController : MonoBehaviour
     }
 
     public void StateCheckingAndSwitchingIfNeeded()
-    {/*
-        if (GetHexDistanceBetweenEnemyAndMe() > attackRangeInHexTiles)
+    {
+        int dist = GetHexDistanceBetweenEnemyAndMe();
+        if (dist > attackRangeInHexTiles)
         {
             state = State.Movement;
         }
@@ -41,7 +43,7 @@ public class UnitController : MonoBehaviour
         {
             state = State.Attack;
         }
-        */
+
     }
 
     void Step()
@@ -92,16 +94,17 @@ public class UnitController : MonoBehaviour
         Vector3 target = SimulationManager.GetLocationOfUnit(colorCode == ColorCode.Red ? ColorCode.Blue : ColorCode.Red);
         int stepCount = 0;
 
+        checker.position = actualPosition;
+
         while (posForDistanceChecking != target)
         {
-            Vector3 hexSideDirection = Vector3.forward- posForDistanceChecking;
+            Vector3 hexSideDirection = checker.forward;
 
             Vector3 minDistanceDirectionVector = Vector3.zero;
             float minDotProduct = 100f;
 
             for (int i = 0; i < 6; i++)
             {
-                Debug.DrawLine(posForDistanceChecking, posForDistanceChecking + hexSideDirection * 10f, Color.red, 5000f);
                 float dotProduct = Vector3.Dot(target - posForDistanceChecking, -hexSideDirection);
                 if (dotProduct < minDotProduct)
                 {
@@ -124,6 +127,7 @@ public class UnitController : MonoBehaviour
                 {
                     Vector3 pos = gridElement.GetBackPosition();
                     posForDistanceChecking = pos;
+                    checker.position = pos;
                 }
             }
 
@@ -144,6 +148,11 @@ public class UnitController : MonoBehaviour
                 Step();
 
                 StateCheckingAndSwitchingIfNeeded();
+
+                if (state == State.Attack)
+                {
+                    break;
+                }
             }
         }
         else if (state == State.Attack)
