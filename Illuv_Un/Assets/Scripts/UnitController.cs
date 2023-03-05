@@ -35,8 +35,8 @@ public class UnitController : MonoBehaviour
 
         for (int i = 0; i < 6; i++)
         {
-            Debug.DrawLine(transform.position, transform.position + hexSideDirection * 10f, Color.red, 5000f);
-            float dotProduct = Vector3.Dot(target - transform.position, hexSideDirection);
+            Debug.DrawLine(actualPosition, actualPosition + hexSideDirection * 10f, Color.red, 5000f);
+            float dotProduct = Vector3.Dot(target - actualPosition, -hexSideDirection);
             if (dotProduct < minDotProduct)
             {
                 minDotProduct = dotProduct;
@@ -50,14 +50,15 @@ public class UnitController : MonoBehaviour
 
         RaycastHit hit;
         // Does the ray intersect any objects excluding the player layer
-        if (Physics.Raycast(transform.position + hexSideDirection * 10f, -Vector3.up, out hit, 100f))
+        if (Physics.Raycast(actualPosition + minDistanceDirectionVector * 10f, -Vector3.up, out hit, 100f))
         {
-            GridElement gridElement = hit.transform.GetComponent<GridElement>();
+            GridElement gridElement = hit.transform.GetComponentInParent<GridElement>();
 
             if (gridElement != null)
             {
                 Vector3 pos = gridElement.GetBackPosition();
-
+                actualPosition = pos;
+                SimulationManager.UpdatePosition(colorCode, actualPosition);
             }
         }
     }
@@ -66,7 +67,17 @@ public class UnitController : MonoBehaviour
     {
         if (!isInitialized) { return; }
 
+        Step();
+    }
 
+    private void Update()
+    {
+        Visualize();
+    }
+
+    void Visualize()
+    {
+        transform.position = actualPosition;
     }
 }
 

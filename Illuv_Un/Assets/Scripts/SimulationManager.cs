@@ -53,7 +53,13 @@ public class SimulationManager : MonoBehaviour
 
     public static Vector3 GetLocationOfUnit(ColorCode colorCode)
     {
-        if(instance== null) { return Vector3.zero; }
+        if (instance == null) { return Vector3.zero; }
         return instance.unitsAndTheirActualLocations[colorCode];
+    }
+
+    public static void UpdatePosition(ColorCode colorCode, Vector3 position)
+    {
+        if (instance == null) { return; }
+        instance.unitsAndTheirActualLocations[colorCode] = position;
     }
 }

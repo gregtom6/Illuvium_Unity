@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[ExecuteInEditMode]
 public class GridCreator : MonoBehaviour
 {
     [SerializeField] GameObject gridElement;
@@ -27,6 +26,7 @@ public class GridCreator : MonoBehaviour
         CreateGrid();
     }
 
+    [ContextMenu("My Custom Function")]
     public void CreateGrid()
     {
         if (instance == null) { return; }
