@@ -6,8 +6,12 @@ public class SimulationManager : MonoBehaviour
 {
     [SerializeField] Transform redUnit;
     [SerializeField] Transform blueUnit;
+    [SerializeField] UnitController redUnitController;
+    [SerializeField] UnitController blueUnitController;
 
-    Dictionary<UnitController, Vector3> unitsAndTheirActualLocations = new Dictionary<UnitController, Vector3>();
+    Dictionary<ColorCode, Vector3> unitsAndTheirActualLocations = new Dictionary<ColorCode, Vector3>();
+
+    static SimulationManager instance;
 
     // Start is called before the first frame update
     void OnEnable()
@@ -21,10 +25,18 @@ public class SimulationManager : MonoBehaviour
         GridCreator.gridCreationFinished -= OnGridCreationFinished;
     }
 
+    private void Start()
+    {
+        instance = this;
+    }
+
     void OnGridCreationFinished()
     {
         Vector3 position = GridCreator.GetRandomPosition();
         redUnit.position = position;
+
+        unitsAndTheirActualLocations.Add(ColorCode.Red, position);
+
         Vector3 newPosition = Vector3.zero;
         do
         {
@@ -32,5 +44,16 @@ public class SimulationManager : MonoBehaviour
         } while (newPosition == position);
 
         blueUnit.position = newPosition;
+
+        unitsAndTheirActualLocations.Add(ColorCode.Blue, newPosition);
+
+        redUnitController.Initialize();
+        blueUnitController.Initialize();
+    }
+
+    public static Vector3 GetLocationOfUnit(ColorCode colorCode)
+    {
+        if(instance== null) { return Vector3.zero; }
+        return instance.unitsAndTheirActualLocations[colorCode];
     }
 }

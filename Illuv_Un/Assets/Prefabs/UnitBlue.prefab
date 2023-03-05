@@ -11,6 +11,14 @@ PrefabInstance:
       propertyPath: m_Materials.Array.data[0]
       value: 
       objectReference: {fileID: 2100000, guid: 80ec132d4cd3b954495c0cca638ef1e4, type: 2}
+    - target: {fileID: 3103328174104913018, guid: a532c9a94048cb2498cf2bb52cfc85e7, type: 3}
+      propertyPath: colorCode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3103328174104913018, guid: a532c9a94048cb2498cf2bb52cfc85e7, type: 3}
+      propertyPath: hexesPerTimeStep
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 8949598815597015297, guid: a532c9a94048cb2498cf2bb52cfc85e7, type: 3}
       propertyPath: m_RootOrder
       value: 0
