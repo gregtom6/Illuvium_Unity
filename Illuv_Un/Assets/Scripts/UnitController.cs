@@ -132,6 +132,12 @@ public class UnitController : MonoBehaviour
             }
 
             stepCount += 1;
+
+            if (stepCount > 10000)
+            {
+                Debug.LogWarning("too much steps");
+                break;
+            }
         }
 
         return stepCount;
