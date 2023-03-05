@@ -2,23 +2,46 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 public class UnitController : MonoBehaviour
 {
     [SerializeField] float hexesPerTimeStep;
+    [SerializeField] float attackRangeInHexTiles;
+    [SerializeField] int hitPointMinBorder;
+    [SerializeField] int hitPointMaxBorder;
+    [SerializeField] int timeStepsPerAttack;
     [SerializeField] ColorCode colorCode;
 
     bool isInitialized = false;
 
     Vector3 actualPosition;
 
+    State state = State.None;
+
     public void Initialize()
     {
         isInitialized = true;
 
         actualPosition = transform.position;
+        SimulationManager.UpdatePosition(colorCode, actualPosition);
 
-        Step();
+        state = State.Movement;
+
+        StateCheckingAndSwitchingIfNeeded();
+    }
+
+    public void StateCheckingAndSwitchingIfNeeded()
+    {/*
+        if (GetHexDistanceBetweenEnemyAndMe() > attackRangeInHexTiles)
+        {
+            state = State.Movement;
+        }
+        else
+        {
+            state = State.Attack;
+        }
+        */
     }
 
     void Step()
@@ -63,11 +86,70 @@ public class UnitController : MonoBehaviour
         }
     }
 
+    int GetHexDistanceBetweenEnemyAndMe()
+    {
+        Vector3 posForDistanceChecking = actualPosition;
+        Vector3 target = SimulationManager.GetLocationOfUnit(colorCode == ColorCode.Red ? ColorCode.Blue : ColorCode.Red);
+        int stepCount = 0;
+
+        while (posForDistanceChecking != target)
+        {
+            Vector3 hexSideDirection = Vector3.forward- posForDistanceChecking;
+
+            Vector3 minDistanceDirectionVector = Vector3.zero;
+            float minDotProduct = 100f;
+
+            for (int i = 0; i < 6; i++)
+            {
+                Debug.DrawLine(posForDistanceChecking, posForDistanceChecking + hexSideDirection * 10f, Color.red, 5000f);
+                float dotProduct = Vector3.Dot(target - posForDistanceChecking, -hexSideDirection);
+                if (dotProduct < minDotProduct)
+                {
+                    minDotProduct = dotProduct;
+                    minDistanceDirectionVector = hexSideDirection;
+                }
+
+                hexSideDirection = Quaternion.AngleAxis(60, Vector3.up) * hexSideDirection;
+            }
+
+
+
+            RaycastHit hit;
+            // Does the ray intersect any objects excluding the player layer
+            if (Physics.Raycast(posForDistanceChecking + minDistanceDirectionVector * 10f, -Vector3.up, out hit, 100f))
+            {
+                GridElement gridElement = hit.transform.GetComponentInParent<GridElement>();
+
+                if (gridElement != null)
+                {
+                    Vector3 pos = gridElement.GetBackPosition();
+                    posForDistanceChecking = pos;
+                }
+            }
+
+            stepCount += 1;
+        }
+
+        return stepCount;
+    }
+
     private void FixedUpdate()
     {
         if (!isInitialized) { return; }
 
-        Step();
+        if (state == State.Movement)
+        {
+            for (int i = 0; i < hexesPerTimeStep; i++)
+            {
+                Step();
+
+                StateCheckingAndSwitchingIfNeeded();
+            }
+        }
+        else if (state == State.Attack)
+        {
+
+        }
     }
 
     private void Update()
@@ -86,4 +168,11 @@ public enum ColorCode
     Red,
     Blue,
     None,
+}
+
+public enum State
+{
+    None,
+    Movement,
+    Attack,
 }

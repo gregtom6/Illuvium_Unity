@@ -49,6 +49,9 @@ public class SimulationManager : MonoBehaviour
 
         redUnitController.Initialize();
         blueUnitController.Initialize();
+
+        redUnitController.StateCheckingAndSwitchingIfNeeded();
+        blueUnitController.StateCheckingAndSwitchingIfNeeded();
     }
 
     public static Vector3 GetLocationOfUnit(ColorCode colorCode)
