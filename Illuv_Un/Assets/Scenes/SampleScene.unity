@@ -540,8 +540,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gridElement: {fileID: 269004258098274807, guid: 5fa737c591ac1b741920f5aaba363e65, type: 3}
-  horizontalCount: 50
-  verticalCount: 50
+  horizontalCount: 101
+  verticalCount: 101
   gridNewElementOffset: 10
   gridNewDistanceFromPreviousLine: 8.5
   gridNewLineIntendation: -5
