@@ -59,12 +59,12 @@ public class SimulationManager : MonoBehaviour
         if (instance == null) { return Vector3.zero; }
         return instance.unitsAndTheirActualLocations[colorCode];
     }
-
-    public static Vector3 GetForecastedLocationOfUnit(Vector3 pos, ColorCode colorCode)
+    /*
+    public static Vector3 GetForecastedLocationOfUnit(Vector3 pos, int stepCount, ColorCode colorCode)
     {
-        return GetOpponent(colorCode).CalculateNextStepBasedOnOpponentPos(pos);
+        return GetOpponent(colorCode).CalculateNextStepBasedOnOpponentPos(pos, stepCount);
     }
-
+    */
     public static UnitController GetOpponent(ColorCode colorCode)
     {
         if (instance == null) { return null; }

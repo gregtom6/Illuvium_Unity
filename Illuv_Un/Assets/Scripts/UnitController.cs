@@ -31,6 +31,8 @@ public class UnitController : MonoBehaviour
 
     float actualTime;
 
+    Vector3 locationUsedForTarget;
+
     private void Start()
     {
         maxLifePoint = Random.Range(hitPointMinBorder, hitPointMaxBorder);
@@ -45,17 +47,22 @@ public class UnitController : MonoBehaviour
     {
         isInitialized = true;
 
-        actualPosition = transform.position;
-        SimulationManager.UpdatePosition(colorCode, actualPosition);
+        actualPosition = SimulationManager.GetLocationOfUnit(colorCode);
+        transform.position = actualPosition;
 
         state = State.Movement;
 
         StateCheckingAndSwitchingIfNeeded();
+
+        if (state == State.Movement)
+        {
+            locationUsedForTarget = CalculateNextStep();
+        }
     }
 
     public void StateCheckingAndSwitchingIfNeeded()
     {
-        int dist = GetHexDistanceBetweenEnemyAndMe();
+        int dist = GetHexDistanceBetweenEnemyAndMe(actualPosition);
         if (dist > attackRangeInHexTiles)
         {
             state = State.Movement;
@@ -83,7 +90,7 @@ public class UnitController : MonoBehaviour
     public Vector3 CalculateNextStep()
     {
         Vector3 posForContinuousViz = transform.position;
-        
+
         int stepCount = 0;
 
         while (stepCount < hexesPerTimeStep)
@@ -92,7 +99,7 @@ public class UnitController : MonoBehaviour
 
             Vector3 minDistanceDirectionVector = Vector3.zero;
 
-            Vector3 target = SimulationManager.GetForecastedLocationOfUnit(posForContinuousViz, colorCode == ColorCode.Red ? ColorCode.Blue : ColorCode.Red);
+            Vector3 target = SimulationManager.GetLocationOfUnit(colorCode == ColorCode.Red ? ColorCode.Blue : ColorCode.Red);
 
             float minDotProduct = 100f;
 
@@ -128,45 +135,10 @@ public class UnitController : MonoBehaviour
                 Debug.LogWarning("too much steps");
                 break;
             }
-        }
 
-        return posForContinuousViz;
-    }
-
-    public Vector3 CalculateNextStepBasedOnOpponentPos(Vector3 opponentPos)
-    {
-        Vector3 hexSideDirection = Vector3.forward;
-
-        Vector3 minDistanceDirectionVector = Vector3.zero;
-
-        Vector3 posForContinuousViz = transform.position;
-
-        Vector3 target = opponentPos;
-
-        float minDotProduct = 100f;
-
-        for (int i = 0; i < 6; i++)
-        {
-            float dotProduct = Vector3.Dot(target - posForContinuousViz, -hexSideDirection);
-            if (dotProduct < minDotProduct)
+            if (GetHexDistanceBetweenEnemyAndMe(posForContinuousViz) <= attackRangeInHexTiles)
             {
-                minDotProduct = dotProduct;
-                minDistanceDirectionVector = hexSideDirection;
-            }
-
-            hexSideDirection = Quaternion.AngleAxis(60, Vector3.up) * hexSideDirection;
-        }
-
-        RaycastHit hit;
-        // Does the ray intersect any objects excluding the player layer
-        if (Physics.Raycast(posForContinuousViz + minDistanceDirectionVector * 10f, -Vector3.up, out hit, 100f))
-        {
-            GridElement gridElement = hit.transform.GetComponentInParent<GridElement>();
-
-            if (gridElement != null)
-            {
-                Vector3 pos = gridElement.GetBackPosition();
-                posForContinuousViz = pos;
+                return posForContinuousViz;
             }
         }
 
@@ -175,53 +147,20 @@ public class UnitController : MonoBehaviour
 
     void Step()
     {
-        Vector3 target = SimulationManager.GetLocationOfUnit(colorCode == ColorCode.Red ? ColorCode.Blue : ColorCode.Red);
+        actualPosition = locationUsedForTarget;
+        transform.position = actualPosition;
+        SimulationManager.UpdatePosition(colorCode, actualPosition);
 
-        Vector3 hexSideDirection = transform.forward;
-
-        Vector3 minDistanceDirectionVector = Vector3.zero;
-        float minDotProduct = 100f;
-
-        Debug.DrawLine(Vector3.zero, new Vector3(5, 0, 0), Color.white, 100f);
-
-
-        for (int i = 0; i < 6; i++)
-        {
-            Debug.DrawLine(actualPosition, actualPosition + hexSideDirection * 10f, Color.red, 5000f);
-            float dotProduct = Vector3.Dot(target - actualPosition, -hexSideDirection);
-            if (dotProduct < minDotProduct)
-            {
-                minDotProduct = dotProduct;
-                minDistanceDirectionVector = hexSideDirection;
-            }
-
-            hexSideDirection = Quaternion.AngleAxis(60, Vector3.up) * hexSideDirection;
-        }
-
-
-
-        RaycastHit hit;
-        // Does the ray intersect any objects excluding the player layer
-        if (Physics.Raycast(actualPosition + minDistanceDirectionVector * 10f, -Vector3.up, out hit, 100f))
-        {
-            GridElement gridElement = hit.transform.GetComponentInParent<GridElement>();
-
-            if (gridElement != null)
-            {
-                Vector3 pos = gridElement.GetBackPosition();
-                actualPosition = pos;
-                SimulationManager.UpdatePosition(colorCode, actualPosition);
-            }
-        }
+        locationUsedForTarget = CalculateNextStep();
     }
 
-    int GetHexDistanceBetweenEnemyAndMe()
+    int GetHexDistanceBetweenEnemyAndMe(Vector3 positionCompareTo)
     {
-        Vector3 posForDistanceChecking = actualPosition;
+        Vector3 posForDistanceChecking = positionCompareTo;
         Vector3 target = SimulationManager.GetLocationOfUnit(colorCode == ColorCode.Red ? ColorCode.Blue : ColorCode.Red);
         int stepCount = 0;
 
-        checker.position = actualPosition;
+        checker.position = positionCompareTo;
 
         while (posForDistanceChecking != target)
         {
@@ -276,17 +215,10 @@ public class UnitController : MonoBehaviour
 
         if (state == State.Movement)
         {
-            for (int i = 0; i < hexesPerTimeStep; i++)
-            {
-                Step();
+            Step();
 
-                StateCheckingAndSwitchingIfNeeded();
+            StateCheckingAndSwitchingIfNeeded();
 
-                if (state == State.Attack)
-                {
-                    break;
-                }
-            }
         }
         else if (state == State.Attack)
         {
@@ -307,18 +239,11 @@ public class UnitController : MonoBehaviour
 
     private void Update()
     {
-        VisualizePosition();
-
         VisualizeDamage();
 
         VisualizeState();
 
         MoveContinuousVisualParent();
-    }
-
-    void VisualizePosition()
-    {
-        transform.position = actualPosition;
     }
 
     void VisualizeDamage()
@@ -351,7 +276,7 @@ public class UnitController : MonoBehaviour
         if (state == State.Movement)
         {
             float currentTime = Time.time - actualTime;
-            continuousVisualParent.position = Vector3.Lerp(transform.position, CalculateNextStep(), currentTime / Time.fixedDeltaTime);
+            continuousVisualParent.position = Vector3.Lerp(transform.position, locationUsedForTarget, currentTime / Time.fixedDeltaTime);
         }
 
     }
