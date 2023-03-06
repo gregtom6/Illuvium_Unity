@@ -8,7 +8,6 @@ public class UnitController : MonoBehaviour
 {
     [SerializeField] ColorCode colorCode;
     [SerializeField] MeshRenderer renderer;
-    [SerializeField] Transform checker;
     [SerializeField] GameObject attackParentGameObject;
     [SerializeField] GameObject dieParentGameObject;
     [SerializeField] Transform continuousVisualParent;
@@ -35,6 +34,11 @@ public class UnitController : MonoBehaviour
 
     private void Start()
     {
+        LifeSetting();
+    }
+
+    void LifeSetting()
+    {
         maxLifePoint = Random.Range(hitPointMinBorder, hitPointMaxBorder);
 
         if (maxLifePoint == 0)
@@ -56,13 +60,13 @@ public class UnitController : MonoBehaviour
 
         if (state == State.Movement)
         {
-            locationUsedForTarget = CalculateNextStep();
+            locationUsedForTarget = CalculateNextStepWithUnitSpeed();
         }
     }
 
     public void StateCheckingAndSwitchingIfNeeded()
     {
-        int dist = GetHexDistanceBetweenEnemyAndMe(actualPosition);
+        int dist = GetHexDistanceBetweenEnemyAndParameterPos(actualPosition);
         if (dist > attackRangeInHexTiles)
         {
             state = State.Movement;
@@ -87,46 +91,15 @@ public class UnitController : MonoBehaviour
         }
     }
 
-    public Vector3 CalculateNextStep()
+    public Vector3 CalculateNextStepWithUnitSpeed()
     {
-        Vector3 posForContinuousViz = transform.position;
+        Vector3 tempPos = transform.position;
 
         int stepCount = 0;
 
         while (stepCount < hexesPerTimeStep)
         {
-            Vector3 hexSideDirection = Vector3.forward;
-
-            Vector3 minDistanceDirectionVector = Vector3.zero;
-
-            Vector3 target = SimulationManager.GetLocationOfUnit(colorCode == ColorCode.Red ? ColorCode.Blue : ColorCode.Red);
-
-            float minDotProduct = 100f;
-
-            for (int i = 0; i < 6; i++)
-            {
-                float dotProduct = Vector3.Dot(target - posForContinuousViz, -hexSideDirection);
-                if (dotProduct < minDotProduct)
-                {
-                    minDotProduct = dotProduct;
-                    minDistanceDirectionVector = hexSideDirection;
-                }
-
-                hexSideDirection = Quaternion.AngleAxis(60, Vector3.up) * hexSideDirection;
-            }
-
-            RaycastHit hit;
-            // Does the ray intersect any objects excluding the player layer
-            if (Physics.Raycast(posForContinuousViz + minDistanceDirectionVector * 10f, -Vector3.up, out hit, 100f))
-            {
-                GridElement gridElement = hit.transform.GetComponentInParent<GridElement>();
-
-                if (gridElement != null)
-                {
-                    Vector3 pos = gridElement.GetBackPosition();
-                    posForContinuousViz = pos;
-                }
-            }
+            tempPos = DecideBestNextPosition(tempPos);
 
             stepCount += 1;
 
@@ -136,13 +109,31 @@ public class UnitController : MonoBehaviour
                 break;
             }
 
-            if (GetHexDistanceBetweenEnemyAndMe(posForContinuousViz) <= attackRangeInHexTiles)
+            if (GetHexDistanceBetweenEnemyAndParameterPos(tempPos) <= attackRangeInHexTiles)
             {
-                return posForContinuousViz;
+                return tempPos;
             }
         }
 
-        return posForContinuousViz;
+        return tempPos;
+    }
+
+    void GetBackMinDotProduct(out float minDotProduct, out Vector3 minDistanceDirectionVector, Vector3 fromVector, Vector3 toVector)
+    {
+        minDotProduct = 100f;
+        minDistanceDirectionVector = Vector3.zero;
+
+        for (int i = 0; i < 6; i++)
+        {
+            float dotProduct = Vector3.Dot(fromVector, -toVector);
+            if (dotProduct < minDotProduct)
+            {
+                minDotProduct = dotProduct;
+                minDistanceDirectionVector = toVector;
+            }
+
+            toVector = Quaternion.AngleAxis(60, Vector3.up) * toVector;
+        }
     }
 
     void Step()
@@ -151,51 +142,18 @@ public class UnitController : MonoBehaviour
         transform.position = actualPosition;
         SimulationManager.UpdatePosition(colorCode, actualPosition);
 
-        locationUsedForTarget = CalculateNextStep();
+        locationUsedForTarget = CalculateNextStepWithUnitSpeed();
     }
 
-    int GetHexDistanceBetweenEnemyAndMe(Vector3 positionCompareTo)
+    int GetHexDistanceBetweenEnemyAndParameterPos(Vector3 positionCompareTo)
     {
-        Vector3 posForDistanceChecking = positionCompareTo;
+        Vector3 tempPos = positionCompareTo;
         Vector3 target = SimulationManager.GetLocationOfUnit(colorCode == ColorCode.Red ? ColorCode.Blue : ColorCode.Red);
         int stepCount = 0;
 
-        checker.position = positionCompareTo;
-
-        while (posForDistanceChecking != target)
+        while (tempPos != target)
         {
-            Vector3 hexSideDirection = checker.forward;
-
-            Vector3 minDistanceDirectionVector = Vector3.zero;
-            float minDotProduct = 100f;
-
-            for (int i = 0; i < 6; i++)
-            {
-                float dotProduct = Vector3.Dot(target - posForDistanceChecking, -hexSideDirection);
-                if (dotProduct < minDotProduct)
-                {
-                    minDotProduct = dotProduct;
-                    minDistanceDirectionVector = hexSideDirection;
-                }
-
-                hexSideDirection = Quaternion.AngleAxis(60, Vector3.up) * hexSideDirection;
-            }
-
-
-
-            RaycastHit hit;
-            // Does the ray intersect any objects excluding the player layer
-            if (Physics.Raycast(posForDistanceChecking + minDistanceDirectionVector * 10f, -Vector3.up, out hit, 100f))
-            {
-                GridElement gridElement = hit.transform.GetComponentInParent<GridElement>();
-
-                if (gridElement != null)
-                {
-                    Vector3 pos = gridElement.GetBackPosition();
-                    posForDistanceChecking = pos;
-                    checker.position = pos;
-                }
-            }
+            tempPos = DecideBestNextPosition(tempPos);
 
             stepCount += 1;
 
@@ -207,6 +165,34 @@ public class UnitController : MonoBehaviour
         }
 
         return stepCount;
+    }
+
+    Vector3 DecideBestNextPosition(Vector3 pooo)
+    {
+        Vector3 hexSideDirection = Vector3.forward;
+
+        Vector3 minDistanceDirectionVector = Vector3.zero;
+
+        Vector3 target = SimulationManager.GetLocationOfUnit(colorCode == ColorCode.Red ? ColorCode.Blue : ColorCode.Red);
+
+        float minDotProduct = 100f;
+
+        GetBackMinDotProduct(out minDotProduct, out minDistanceDirectionVector, target - pooo, hexSideDirection);
+
+        RaycastHit hit;
+        if (Physics.Raycast(pooo + minDistanceDirectionVector * 10f, -Vector3.up, out hit, 100f))
+        {
+            GridElement gridElement = hit.transform.GetComponentInParent<GridElement>();
+
+            if (gridElement != null)
+            {
+                Vector3 pos = gridElement.GetBackPosition();
+                pooo = pos;
+                return pooo;
+            }
+        }
+
+        return Vector3.zero;
     }
 
     private void FixedUpdate()
@@ -248,19 +234,13 @@ public class UnitController : MonoBehaviour
 
     void VisualizeDamage()
     {
-        // Get the current material color
         Color currentColor = renderer.material.color;
-
-        // Convert the color to HSV
         Color.RGBToHSV(currentColor, out float h, out float s, out float v);
 
-        // Modify the S value
         s = (float)currentLifePoint / (float)maxLifePoint;
 
-        // Convert the modified HSV color back to RGB
         Color newColor = Color.HSVToRGB(h, s, v);
 
-        // Set the material color to the new color
         renderer.material.color = newColor;
     }
 
