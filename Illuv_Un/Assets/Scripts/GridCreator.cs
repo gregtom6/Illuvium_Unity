@@ -12,13 +12,12 @@ public class GridCreator : MonoBehaviour
     [SerializeField] float gridNewDistanceFromPreviousLine = 8.5f;
     [SerializeField] float gridNewLineIntendation = -5f;
 
-    public static List<Vector3> gridElementPositions = new List<Vector3>();
+    static List<Vector3> gridElementPositions = new List<Vector3>();
 
     static GridCreator instance;
 
     public static Action gridCreationFinished;
 
-    // Start is called before the first frame update
     void Start()
     {
         instance = this;
@@ -26,7 +25,6 @@ public class GridCreator : MonoBehaviour
         CreateGrid();
     }
 
-    [ContextMenu("My Custom Function")]
     public void CreateGrid()
     {
         if (instance == null) { return; }
